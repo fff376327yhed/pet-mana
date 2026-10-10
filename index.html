@@ -178,12 +178,50 @@ input[type=number]{width:100%}
   .chip{white-space:nowrap;flex:0 0 auto}
 }
 @media (prefers-reduced-motion:no-preference){.chip,.navbtn,.iconbtn{transition:background .15s,color .15s,border-color .15s}}
+
+/* 글줄바꿈: 한 글자씩 세로로 꺾이지 않게 */
+body{word-break:keep-all;overflow-wrap:break-word;line-break:strict}
+td,th,.note,.ui .tx,.fx li,.sk,.rule,summary,.body,.sub,p{word-break:keep-all;overflow-wrap:break-word}
+th,td{min-width:88px}
+.tscroll table{min-width:620px}
+.tscroll.keep td,.tscroll.keep th{min-width:0}
+.tscroll.keep table{min-width:640px}
+td.n,th.n{min-width:0}
+.sk .nm{flex:1 1 130px}
+.sk .top{row-gap:4px}
+.sidehead{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:0 4px 0 8px}
+.sidehead .brand{padding:0;display:flex;gap:6px;white-space:nowrap}
+.sidehead .iconbtn{min-width:40px;min-height:40px;padding:0 10px}
+.navbtn .ic{flex:0 0 auto}
+.navbtn .lb{min-width:0}
+.themebtn{display:inline-flex;align-items:center;justify-content:center;gap:4px}
+@media (min-width:900px){
+  .app{transition:grid-template-columns .2s}
+  .app.collapsed{grid-template-columns:76px minmax(0,1fr)}
+  .app.collapsed .lb,.app.collapsed .brandsub{display:none}
+  .app.collapsed .side{padding:20px 8px;align-items:center}
+  .app.collapsed .sidehead{flex-direction:column;padding:0}
+  .app.collapsed .navbtn{justify-content:center;padding:10px 0}
+  .app.collapsed .navbtn .ic{font-size:21px}
+  .app.collapsed .sidefoot{width:100%}
+  .app.collapsed .sidefoot .iconbtn{padding:0}
+  .app.collapsed nav{width:100%;display:flex;flex-direction:column;gap:6px}
+}
+@media (max-width:700px){
+  .tscroll:not(.keep) table{min-width:0}
+  .tscroll:not(.keep) td,.tscroll:not(.keep) th{min-width:0}
+  .tscroll:not(.keep) td .cv{overflow-wrap:break-word;word-break:keep-all}
+}
+
+.upd .dtm{color:var(--mute);font-weight:500;font-size:12.5px}
+.ui .fx{padding-left:16px;font-size:15px}
+.ui .fx li{margin:3px 0}
 </style>
 </head>
 <body>
 <div class="app">
   <aside class="side" aria-label="목차">
-    <div class="brand">🐾 해정펫 정리</div>
+    <div class="sidehead"><div class="brand"><span>🐾</span><span class="lb">해정펫 정리</span></div><button type="button" class="iconbtn" id="collapseBtn" aria-expanded="true" title="목차 접기">◀</button></div>
     <div class="brandsub">규칙 · 확률 · 스킬 모음</div>
     <nav id="sideNav" role="tablist" aria-label="해정펫 정리 목차"></nav>
     <div class="sidefoot"><button type="button" class="iconbtn themebtn"></button></div>
@@ -276,29 +314,36 @@ const rateRange = (g) => { const r = D.pets.filter((x) => x.grade === g).map((x)
 function panelUpdates() {
   const p = el('section', 'panel'); p.id = 'p-update';
   p.append(el('h2', '', '🆕 업데이트 내역'));
-  put(p, el('p', 'sub', '최신순 · 한국 시간(KST) · 파란 글자를 누르면 바로 해당 내용으로 가요.'));
+  put(p, el('p', 'sub', '하루 단위로 묶고, 같은 종류끼리 모았어요 · 최신순 · 한국 시간(KST) · 파란 글자를 누르면 바로 이동해요.'));
+  // 날짜별 → 종류별(kind: '' 기본 / new 초록 / fix 주황) → 항목
   const LOG = [
-    { at: '2026-10-11 00:10', latest: true, items: [
-      ['new', '화면', 'PC는 왼쪽 목차, 모바일은 [☰ 목차] 버튼으로 모든 카테고리를 한눈에 봐요.'],
-      ['new', '화면', '🌙 다크모드 버튼 추가 (자동 → 라이트 → 다크 순서로 바뀌어요).'],
-      ['', '화면', '모바일에서 표가 카드 모양으로 바뀌어 읽기 편해졌어요.'],
-      ['new', '편의', '스킬 이름을 누르면 스킬 도감에서 바로 검색돼요. 예: [[skill:시한폭탄]] · [[skill:마나증폭]]'],
+    { date: '2026-10-11', last: '00:40', latest: true, groups: [
+      ['new', '신규', ['[[tab:prob|확률 정리]] 탭 추가 — 포획·전투·보상·장비·스킬 확률을 한곳에 모았어요.']],
+      ['', '화면', [
+        'PC는 왼쪽 목차(◀ 로 접기), 모바일은 [☰ 목차] 버튼으로 전체 카테고리를 봐요.',
+        '🌙 다크모드 추가 (자동 → 라이트 → 다크).',
+        '모바일 표를 카드 모양으로 바꾸고, 긴 글이 세로로 꺾이던 문제를 고쳤어요.',
+      ]],
+      ['', '편의', ['스킬 이름을 누르면 스킬 도감에서 바로 검색돼요. 예: [[skill:시한폭탄]] · [[skill:마나증폭]]']],
     ] },
-    { at: '2026-10-10 23:40', items: [
-      ['new', '스킬', '[[tab:skills|스킬 도감]]에 82개 추가 (300 → 382개). 예: [[skill:약점 찌르기]] · [[skill:프리즘 화신]] · [[skill:봉인의 낙인]]'],
-      ['', '확률', '[[tab:odds|스킬 확률]]을 새 개수로 다시 계산했어요.'],
-      ['fix', '버그', '이름이 겹친 스킬 정리: [[skill:마나증폭]] · [[skill:초출력]] (나중에 정의된 쪽이 실제로 쓰여요).'],
-    ] },
-    { at: '2026-10-10 22:30', items: [
-      ['new', '신규', '[[tab:rank|전투력·랭킹]] 탭 추가 (전투력 공식, 랭킹 7종).'],
-      ['', '보강', '[[tab:battle|전투·보상]]에 자동사냥이 꺼지는 5가지 사유 추가.'],
-      ['new', '신규', '업데이트 탭 추가.'],
+    { date: '2026-10-10', last: '23:40', groups: [
+      ['new', '신규', ['[[tab:rank|전투력·랭킹]] 탭 (전투력 공식, 랭킹 7종) · 업데이트 탭']],
+      ['', '스킬', [
+        '[[tab:skills|스킬 도감]]에 82개 추가 (300 → 382개). 예: [[skill:약점 찌르기]] · [[skill:프리즘 화신]] · [[skill:봉인의 낙인]]',
+        '[[tab:odds|스킬 확률]]을 새 개수로 다시 계산했어요.',
+      ]],
+      ['', '보강', ['[[tab:battle|전투·보상]]에 자동사냥이 꺼지는 5가지 사유를 추가했어요.']],
+      ['fix', '버그', ['이름이 겹친 스킬 정리: [[skill:마나증폭]] · [[skill:초출력]] (나중에 정의된 쪽이 실제로 쓰여요).']],
     ] },
   ];
   LOG.forEach((e) => {
     const box = el('div', 'upd' + (e.latest ? ' latest' : ''));
-    const dt = el('div', 'dt'); dt.append(el('span', '', '🕒 ' + e.at)); if (e.latest) dt.append(el('span', 'badge-new', '최신')); box.append(dt);
-    e.items.forEach(([kind, tg, text]) => { const r = el('div', 'ui'); const tx = el('div', 'tx'); tx.append(rich(text)); r.append(el('span', 'tag' + (kind ? ' ' + kind : ''), tg), tx); box.append(r); });
+    const dt = el('div', 'dt'); dt.append(el('span', '', '📅 ' + e.date), el('span', 'dtm', e.last + ' 갱신')); if (e.latest) dt.append(el('span', 'badge-new', '최신')); box.append(dt);
+    e.groups.forEach(([kind, tg, lines]) => {
+      const r = el('div', 'ui'); const tx = el('div', 'tx'); const ul = el('ul', 'fx');
+      lines.forEach((t) => { const li = el('li'); li.append(rich(t)); ul.append(li); });
+      tx.append(ul); r.append(el('span', 'tag' + (kind ? ' ' + kind : ''), tg), tx); box.append(r);
+    });
     p.append(box);
   });
   put(p, note('', '📌 참고', '게임 숫자가 바뀐 게 아니라, 이 설명서의 내용과 화면을 보강한 기록이에요.'));
@@ -693,13 +738,71 @@ function panelElem() {
   return p;
 }
 
+// ───────── 탭: 확률 정리 ─────────
+function panelProb() {
+  const p = el('section', 'panel'); p.id = 'p-prob';
+  const Q = D.equip;
+  const lohi = (g) => { const r = D.pets.filter((x) => x.grade === g).map((x) => x.catchRate); const lo = Math.min(...r), hi = Math.max(...r); return lo === hi ? pct(lo, 1) : pct(lo, 1) + ' ~ ' + pct(hi, 1); };
+  p.append(el('h2', '', '🎲 확률 정리'));
+  put(p, el('p', 'sub'), );
+  p.lastChild.append('게임의 확률을 한곳에 모았어요. 파란 글자를 누르면 자세한 탭으로 가요 → ', tabLink('catch', '탐험·포획'), ' · ', tabLink('battle', '전투·보상'), ' · ', tabLink('odds', '스킬 확률'), ' · ', tabLink('equip', '장비'));
+  p.append(cards([
+    [pct(C.CRIT_CHANCE, 0), '내 급소 확률'], [pct(C.EVADE_CHANCE, 0), '내 회피 확률'], [pct(C.WILD_FLEE_CHANCE, 0), '매 턴 끝 야생 펫이 도망'],
+    [pct(C.CATCH_MAX_CHANCE, 0), '포획 상한 (아이템 없이)'], [pct(C.CATCH_MAX_WITH_ITEMS, 0), '포획 상한 (아이템 사용)'], [pct(SC.wildSkillChance, 0), '야생 펫 전용기 사용 (매 턴)'],
+    [pct(SC.sigChance, 0), '스킬 뽑기에서 전용기'], [pct(D.tierWeight[5] / D.tierTotal, 0), '스킬 뽑기에서 ★5'], [pct(C.BONUS_DOUBLE_CHANCE, 1), '승리 보상 2배'],
+    [pct(C.BONUS_TRIPLE_CHANCE, 1), '승리 보상 3배'], [pct(Q.dropWin, 0), '승리 시 장비 드롭 (기본)'], [pct(Q.dropCatch, 0), '포획 시 장비 드롭 (기본)'],
+  ]));
+
+  p.append(el('h3', '', '🌿 만남 확률 — 가장 희귀한 펫 TOP 10'));
+  put(p, el('p', '', '장소마다 펫이 나올 확률이 달라요. 아래는 한 번 만날 때 확률이 가장 낮은 순서예요. 전체 목록은 '));
+  p.lastChild.append(tabLink('world', '장소·펫'), ' 탭에 있어요.');
+  const rare = D.locations.flatMap((l) => l.spawns.map((sp) => ({ l, x: PET[sp.petId], c: sp.chance }))).sort((a, b) => a.c - b.c).slice(0, 10);
+  p.append(table(['펫', '등급', '장소', '만날 확률', '첫 던지기 포획'], rare.map((r) => [r.x.emoji + ' ' + r.x.name, gradeTag(r.x.grade), r.l.emoji + ' ' + r.l.name, pct(r.c, 2), pct(firstThrow(r.x), 1)]), [3, 4]));
+
+  p.append(el('h3', '', '🔴 포획 확률'));
+  p.append(table(['등급', '펫 기본 포획률', '등급 깎임', '도망 실패 확률 (싸울 때)'], GRADE_KEYS.map((g) => [gradeTag(g), lohi(g), penaltyOf(g) ? '-' + pct(penaltyOf(g), 0) + 'p' : '없음', pct(T.GRADE_EFFECTS[g].fleeFail, 0)]), [1, 2, 3]));
+  put(p, el('p', 'fl', `실제 확률 = 포획률 × 레벨 보정 × 체력 보정 × 아이템 배수 − 등급 깎임 − 던진 횟수 × ${pct(C.CATCH_DROP_PER_TRY, 0)}p (상한 ${pct(C.CATCH_MAX_CHANCE, 0)} / 아이템 ${pct(C.CATCH_MAX_WITH_ITEMS, 0)}). 직접 넣어 보려면 `), );
+  p.lastChild.append(tabLink('catch', '포획 확률 계산기'), '를 써요.');
+  p.append(table(['놓친 횟수', '도망 확률', '🕸️ 끈끈이 그물'], [1, 2, 3].map((n) => [n === 3 ? '3번째 이상' : n + '번째 실패', pct(fleeAfterFail(n, false), 0), pct(fleeAfterFail(n, true), 0)]), [1, 2]));
+  p.append(table(['포획 아이템', '효과'], [['🍖 맛있는 간식', '포획 확률 +' + pct(D.snackBonus, 0) + ' (중첩)'], ['🍯 황금 꿀', '포획 확률 +' + pct(D.honeyBonus, 0) + ' (중첩)'], ['🍀 행운의 부적', '다음 1번 던지기 +' + pct(D.charmBonus, 0)], ['🕸️ 끈끈이 그물', '도망 확률 -' + pct(C.CATCH_NET_FLEE_REDUCE, 0) + 'p'], ['간식 + 꿀 합계 상한', '+' + pct(C.CATCH_BAIT_BONUS_CAP, 0)]]));
+
+  p.append(el('h3', '', '⚔️ 전투 확률'));
+  p.append(table(['야생 펫 등급', '내 공격 빗나감', '상대 급소 확률'], GRADE_KEYS.map((g) => [gradeTag(g), pct(T.GRADE_EFFECTS[g].missChance, 1), pct(T.GRADE_EFFECTS[g].critChance, 1)]), [1, 2]));
+  p.append(table(['항목', '확률'], [
+    ['내 급소', pct(C.CRIT_CHANCE, 0)], ['내 펫의 회피', pct(C.EVADE_CHANCE, 0)], ['매 턴 끝 야생 펫이 겁먹고 도망', pct(C.WILD_FLEE_CHANCE, 0)], ['야생 펫이 전용기를 쓸 확률 (마나가 될 때)', pct(SC.wildSkillChance, 0) + ' / 턴'],
+  ], [1]));
+  put(p, el('p', 'fl'));
+  p.lastChild.append('기절 · 화상 · 독 같은 상태이상 확률은 스킬마다 달라요 → ', skillLink('기절', '기절'), ' · ', skillLink('화상', '화상'), ' · ', skillLink('독', '독'), ' 로 스킬 도감에서 찾아보세요.');
+
+  p.append(el('h3', '', '🎁 보상 · 장비 확률'));
+  p.append(table(['항목', '확률'], [
+    ['승리 보상 2배', pct(C.BONUS_DOUBLE_CHANCE, 1)], ['승리 보상 3배', pct(C.BONUS_TRIPLE_CHANCE, 1)],
+    ['승리 시 새 장비 드롭 (기본)', pct(Q.dropWin, 0)], ['포획 시 새 장비 드롭 (기본)', pct(Q.dropCatch, 0)], ['야생 펫 등급이 한 단계 높을 때마다', '드롭 확률 배수 +' + pct(Q.dropGradeBonus, 0)],
+    ['야생 펫이 칸 하나에 장비를 입고 나옴', pct(Q.wildSlotChance, 0)], ['입고 있던 장비를 떨어뜨림 (승리 / 포획)', pct(Q.wornDropWin, 0) + ' / ' + pct(Q.wornDropCatch, 0)],
+  ], [1]));
+  p.append(table(['장비 등급', '급소 확률 (최대치)', '회피 확률 (최대치)'], GRADE_KEYS.map((g) => [gradeTag(g), Q.critByGrade[g] ? pct(Q.critByGrade[g], 1) : '—', Q.evadeByGrade[g] ? pct(Q.evadeByGrade[g], 1) : '—']), [1, 2]));
+  put(p, el('p', 'fl', `장비로 올릴 수 있는 급소 상한 ${pct(Q.critCap, 0)}, 회피 상한 ${pct(Q.evadeCap, 0)}. 칸마다 붙는 비율이 달라서 실제 수치는 `)); p.lastChild.append(tabLink('equip', '장비'), ' 탭을 확인하세요.');
+
+  p.append(el('h3', '', '✨ 스킬 뽑기 확률'));
+  p.append(table(['구분', '확률', '스킬 하나가 나올 확률'], [
+    ['전용기 (그 펫만)', pct(SC.sigChance, 0), '펫의 전용기 수로 똑같이 나눠요'],
+    ...[1, 2, 3, 4, 5].map((t) => ['일반 ' + '★'.repeat(t), pct((1 - SC.sigChance) * D.tierWeight[t] / D.tierTotal, 2), pct((1 - SC.sigChance) * (D.tierWeight[t] / D.tierTotal) / D.tierCounts[t], 3) + ' (' + D.tierCounts[t] + '개 중)']),
+  ], [1]));
+
+  p.append(el('h3', '', '🏃 자동사냥 포획 기준'));
+  p.append(table(['항목', '값'], [
+    ['도감에 없는 펫에게 해정볼을 던지는 야생 펫 체력', pct(C.AUTO_HUNT_CATCH_HP_RATIO, 0) + ' 이하'], ['포획 확률이 이보다 낮으면 던지지 않고 싸워요', pct(C.AUTO_HUNT_MIN_CATCH, 0)], ['한 마리에게 던지는 최대 해정볼', C.AUTO_HUNT_MAX_THROWS + '개'],
+  ], [1]));
+  return p;
+}
+
 // ───────── 조립 ─────────
-const TABS = [['update', '🆕 업데이트', panelUpdates], ['start', '🐣 한눈에 보기', panelStart], ['catch', '🌿 탐험·포획', panelCatch], ['battle', '⚔️ 전투·보상', panelBattle], ['world', '🗺️ 장소·펫', panelWorld], ['elem', '🌈 속성', panelElem], ['odds', '✨ 스킬 확률', panelOdds], ['skills', '📚 스킬 도감', panelSkills], ['items', '🎒 아이템·육성', panelItems], ['equip', '🛡️ 장비', panelEquip], ['rank', '🏆 전투력·랭킹', panelRank]];
+const TABS = [['update', '🆕 업데이트', panelUpdates], ['start', '🐣 한눈에 보기', panelStart], ['prob', '🎲 확률 정리', panelProb], ['catch', '🌿 탐험·포획', panelCatch], ['battle', '⚔️ 전투·보상', panelBattle], ['world', '🗺️ 장소·펫', panelWorld], ['elem', '🌈 속성', panelElem], ['odds', '✨ 스킬 확률', panelOdds], ['skills', '📚 스킬 도감', panelSkills], ['items', '🎒 아이템·육성', panelItems], ['equip', '🛡️ 장비', panelEquip], ['rank', '🏆 전투력·랭킹', panelRank]];
 const panels = {};
 const drawer = $('drawer');
 const setDrawer = (open) => { drawer.hidden = !open; $('menuBtn').setAttribute('aria-expanded', String(open)); document.body.style.overflow = open ? 'hidden' : ''; };
 TABS.forEach(([id, label, fn]) => {
-  [$('sideNav'), $('drawerGrid')].forEach((host) => { const b = el('button', 'navbtn', label); b.type = 'button'; b.dataset.tab = id; b.setAttribute('role', 'tab'); b.addEventListener('click', () => show(id)); host.append(b); });
+  [$('sideNav'), $('drawerGrid')].forEach((host) => { const b = el('button', 'navbtn'); const [ic, ...rest] = label.split(' '); b.append(el('span', 'ic', ic), el('span', 'lb', rest.join(' '))); b.title = label; b.type = 'button'; b.dataset.tab = id; b.setAttribute('role', 'tab'); b.addEventListener('click', () => show(id)); host.append(b); });
   const pn = fn(); pn.hidden = true; pn.setAttribute('role', 'tabpanel'); $('panels').append(pn); panels[id] = pn;
 });
 function show(id, scroll = true) {
@@ -715,6 +818,18 @@ $('closeBtn').addEventListener('click', () => setDrawer(false));
 drawer.addEventListener('click', (e) => { if (e.target === drawer) setDrawer(false); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setDrawer(false); });
 
+// 왼쪽 목차 접기/펼치기
+const appEl = document.querySelector('.app');
+function setCollapsed(c) {
+  appEl.classList.toggle('collapsed', c);
+  const b = $('collapseBtn'); b.textContent = c ? '▶' : '◀'; b.title = c ? '목차 펼치기' : '목차 접기'; b.setAttribute('aria-expanded', String(!c));
+  try { localStorage.setItem('hj-side', c ? '1' : '0'); } catch (e) { /* 무시 */ }
+}
+$('collapseBtn').addEventListener('click', () => setCollapsed(!appEl.classList.contains('collapsed')));
+let startCollapsed = false;
+try { startCollapsed = localStorage.getItem('hj-side') === '1'; } catch (e) { /* 무시 */ }
+setCollapsed(startCollapsed);
+
 // 다크모드: 자동 → 라이트 → 다크
 const THEMES = [['auto', '🌓 자동'], ['light', '☀️ 라이트'], ['dark', '🌙 다크']];
 let themeIdx = 0;
@@ -722,14 +837,14 @@ try { const s = localStorage.getItem('hj-theme'); const i = THEMES.findIndex((t)
 function applyTheme() {
   const [mode, label] = THEMES[themeIdx];
   if (mode === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', mode);
-  document.querySelectorAll('.themebtn').forEach((b) => { b.textContent = label; b.title = '화면 모드 바꾸기'; });
+  document.querySelectorAll('.themebtn').forEach((b) => { b.replaceChildren(el('span', '', label.split(' ')[0]), el('span', 'lb', label.split(' ')[1])); b.title = '화면 모드 바꾸기 · ' + label; });
 }
 document.querySelectorAll('.themebtn').forEach((b) => b.addEventListener('click', () => { themeIdx = (themeIdx + 1) % THEMES.length; applyTheme(); try { localStorage.setItem('hj-theme', THEMES[themeIdx][0]); } catch (e) { /* 무시 */ } }));
 applyTheme();
 
 show((location.hash || '').slice(1) || 'update', false);
 window.addEventListener('hashchange', () => show((location.hash || '').slice(1) || 'update'));
-$('foot').textContent = `이 페이지의 숫자는 게임 코드의 기본값이에요. 관리자 설정으로 값을 바꿨다면 실제 게임과 다를 수 있어요. (데이터 기준일 ${D.builtAt} · 설명서 최근 업데이트 2026-10-11 00:10 KST)`;
+$('foot').textContent = `이 페이지의 숫자는 게임 코드의 기본값이에요. 관리자 설정으로 값을 바꿨다면 실제 게임과 다를 수 있어요. (데이터 기준일 ${D.builtAt} · 설명서 최근 업데이트 2026-10-11 00:40 KST)`;
 </script>
 </body>
 </html>

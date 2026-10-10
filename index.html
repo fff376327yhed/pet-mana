@@ -216,6 +216,7 @@ td.n,th.n{min-width:0}
 .upd .dtm{color:var(--mute);font-weight:500;font-size:12.5px}
 .ui .fx{padding-left:16px;font-size:15px}
 .ui .fx li{margin:3px 0}
+.sk.linked{box-shadow:0 0 0 2px var(--manabg),var(--shadow)}
 </style>
 </head>
 <body>
@@ -576,11 +577,26 @@ function panelOdds() {
 // ───────── 탭 6: 스킬 도감 ─────────
 const stateS = { q: '', cat: '전체', tier: 0, sort: 'mana-asc' };
 const firstTurn = (c) => Math.max(1, Math.ceil((c - SC.manaStart) / SC.manaPerTurn) + 1);
+// 서로 이어지는 스킬 (한쪽을 찾으면 짝도 같이 보여줘요)
+const SKILL_PAIRS = [['forbidden_curse', 'curse_grant']];
+const SKILL_BY_ID = Object.fromEntries(D.skills.map((x) => [x.id, x]));
+function withLinked(list) {
+  const out = [], seen = new Set();
+  list.forEach((sk) => {
+    if (seen.has(sk.id)) return;
+    const pr = SKILL_PAIRS.find((x) => x.includes(sk.id));
+    (pr ? pr : [sk.id]).forEach((id) => { if (!seen.has(id) && SKILL_BY_ID[id]) { seen.add(id); out.push(SKILL_BY_ID[id]); } });
+  });
+  return out;
+}
 function skillCard(s) {
   const d = el('div', 'sk'); d.style.setProperty('--tc', TC[s.t]);
   const top = el('div', 'top'); top.append(el('span', 'em', s.e), el('span', 'nm', s.n)); if (s.u) top.append(el('span', 'uq', '독창'));
   top.append(el('span', 'st', '★'.repeat(s.t)), el('span', 'mana', '마나 ' + s.c)); d.append(top);
-  const meta = el('div', 'meta'); meta.append(el('span', '', s.p ? `${s.pe} ${s.p} 전용기` : s.k), el('span', '', `${firstTurn(s.c)}턴째부터 사용`), el('span', '', `뽑힐 확률 ${pct(s.r, 3)}`)); d.append(meta);
+  const meta = el('div', 'meta'); meta.append(el('span', '', s.p ? `${s.pe} ${s.p} 전용기` : s.k), el('span', '', `${firstTurn(s.c)}턴째부터 사용`), el('span', '', s.r === 0 ? '다른 스킬을 쓴 다음 턴에만 나타나요' : `뽑힐 확률 ${pct(s.r, 3)}`));
+  const pr = SKILL_PAIRS.find((x) => x.includes(s.id));
+  if (pr) { const o = SKILL_BY_ID[pr.find((x) => x !== s.id)]; meta.append(skillLink(o.n, '🔗 연계: ' + o.n)); d.classList.add('linked'); }
+  d.append(meta);
   if (s.f) d.append(el('div', 'fl', s.f));
   const ul = el('ul', 'fx'); s.x.forEach((l) => ul.append(el('li', '', l.replace(/\*\*/g, '')))); d.append(ul); return d;
 }
@@ -601,7 +617,7 @@ function panelSkills() {
   const render = () => {
     let r = D.skills.filter((s) => (stateS.cat === '전체' || (stateS.cat === '독창' ? s.u : (s.k === stateS.cat && !s.u))) && (!stateS.tier || s.t === stateS.tier) && (!stateS.q || (s.n + ' ' + (s.p ?? '') + ' ' + s.x.join(' ') + ' ' + (s.f ?? '')).toLowerCase().includes(stateS.q)));
     const by = { 'mana-asc': (a, b) => a.c - b.c || b.t - a.t || a.n.localeCompare(b.n, 'ko'), 'mana-desc': (a, b) => b.c - a.c || b.t - a.t || a.n.localeCompare(b.n, 'ko'), 'tier-desc': (a, b) => b.t - a.t || a.c - b.c || a.n.localeCompare(b.n, 'ko'), rare: (a, b) => a.r - b.r || b.t - a.t || a.n.localeCompare(b.n, 'ko'), name: (a, b) => a.n.localeCompare(b.n, 'ko') }[stateS.sort];
-    r.sort(by); count.textContent = `${r.length}개 표시 중`; list.replaceChildren();
+    r.sort(by); r = withLinked(r); count.textContent = `${r.length}개 표시 중`; list.replaceChildren();
     if (!r.length) { list.append(el('div', 'empty', '조건에 맞는 스킬이 없어요 🥲')); return; }
     const frag = document.createDocumentFragment(); r.forEach((s) => frag.append(skillCard(s))); list.append(frag);
   };

@@ -227,6 +227,8 @@ td.n,th.n{min-width:0}
 .ui .fx{padding-left:16px;font-size:15px}
 .ui .fx li{margin:3px 0}
 .sk.linked{box-shadow:0 0 0 2px var(--manabg),var(--shadow)}
+.gh{margin:20px 0 9px;font-size:15.5px;font-weight:800}
+.gh:first-child{margin-top:4px}
 .pets{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:11px}
 .pet{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--mana);box-shadow:var(--shadow);border-radius:var(--radius-sm);padding:13px 14px;display:flex;flex-direction:column;gap:10px;min-width:0;word-break:keep-all;overflow-wrap:break-word}
 .pet .top{display:flex;align-items:center;gap:7px;flex-wrap:wrap;row-gap:4px}
@@ -630,31 +632,37 @@ function panelWorld() {
     d.append(b); p.append(d);
   });
   p.append(el('h3', '', '🐾 펫 도감'));
-  const tools = el('div', 'row'); const q = el('input'); q.type = 'search'; q.placeholder = '펫 이름 · 전용기 이름으로 검색'; const gs = el('select'); const o0 = el('option', '', '모든 등급'); o0.value = ''; gs.append(o0); GRADE_KEYS.forEach((g) => { const o = el('option', '', T.GRADES[g].emoji + ' ' + T.GRADES[g].name); o.value = g; gs.append(o); }); tools.append(q, gs); p.append(tools);
+  const tools = el('div', 'row'); const q = el('input'); q.type = 'search'; q.placeholder = '펫 이름 · 전용기 이름으로 검색'; const gs = el('select'); const o0 = el('option', '', '모든 등급'); o0.value = ''; gs.append(o0); GRADE_KEYS.forEach((g) => { const o = el('option', '', T.GRADES[g].emoji + ' ' + T.GRADES[g].name); o.value = g; gs.append(o); }); const so = el('select'); [['rare', '💎 희귀도 순'], ['loc', '📍 장소 순']].forEach(([v, l]) => { const o = el('option', '', l); o.value = v; so.append(o); }); tools.append(q, gs, so); p.append(tools);
   const cnt = el('p', 'count'); const holder = el('div'); p.append(cnt, holder);
+  const petCard = (x) => {
+    const c = el('div', 'pet'), top = el('div', 'top');
+    top.append(el('span', 'nm', x.emoji + ' ' + x.name + ' ' + elemIcons(x.id)));
+    if (x.starter) top.append(el('span', 'uq', '스타팅'));
+    top.append(el('span', 'gr', gradeTag(x.grade))); c.append(top);
+    const st = el('div', 'stats');
+    [['체력', x.stats.hp], ['공격', x.stats.atk], ['방어', x.stats.def], ['속도', x.stats.spd]].forEach(([l, v]) => { const d = el('div'); d.append(el('b', '', v), l); st.append(d); });
+    c.append(st);
+    const dl = el('dl'); const row = (k, v) => { dl.append(el('dt', '', k)); const dd = el('dd'); put(dd, v); dl.append(dd); };
+    row('경험치값', fmt(x.expYield)); row('포획 %', pct(firstThrow(x), 1)); row(`→ 체력 ${pct(C.CATCH_HP_T1, 0)} 이하`, pct(weakThrow(x), 1)); row('→ 그 체력 + 아이템 풀세팅', pct(maxItems(x), 1));
+    row('나오는 곳', x.where.length ? x.where.map((w) => `${w.emoji}${w.name} ${pct(w.chance, 1)}`).join(', ') : '처음에 고를 수 있어요');
+    row('전용기', x.sigs.length ? x.sigs.flatMap((s, i) => [i ? ', ' : '', skillLink(s.n, s.e + s.n)]) : '—');
+    c.append(dl); return c;
+  };
+  const grid = (list) => { const g = el('div', 'pets'); list.forEach((x) => g.append(petCard(x))); return g; };
+  const ord = (x) => T.GRADES[x.grade].order;
   const draw = () => {
     const k = q.value.trim().toLowerCase(); holder.replaceChildren();
-    const rows = D.pets.filter((x) => (!gs.value || x.grade === gs.value) && (!k || (x.name + ' ' + x.sigs.map((s) => s.n).join(' ')).toLowerCase().includes(k)))
-      .sort((a, b) => T.GRADES[a.grade].order - T.GRADES[b.grade].order || a.catchRate - b.catchRate);
+    const rows = D.pets.filter((x) => (!gs.value || x.grade === gs.value) && (!k || (x.name + ' ' + x.sigs.map((s) => s.n).join(' ')).toLowerCase().includes(k)));
     cnt.textContent = rows.length + '마리 표시 중 · 능력치는 Lv.1 기준';
-    if (!rows.length) { holder.className = ''; holder.append(el('div', 'empty', '조건에 맞는 펫이 없어요 🥲')); return; }
-    holder.className = 'pets'; const frag = document.createDocumentFragment();
-    rows.forEach((x) => {
-      const c = el('div', 'pet'), top = el('div', 'top');
-      top.append(el('span', 'nm', x.emoji + ' ' + x.name + ' ' + elemIcons(x.id)));
-      if (x.starter) top.append(el('span', 'uq', '스타팅'));
-      top.append(el('span', 'gr', gradeTag(x.grade))); c.append(top);
-      const st = el('div', 'stats');
-      [['체력', x.stats.hp], ['공격', x.stats.atk], ['방어', x.stats.def], ['속도', x.stats.spd]].forEach(([l, v]) => { const d = el('div'); d.append(el('b', '', v), l); st.append(d); });
-      c.append(st);
-      const dl = el('dl'); const row = (k, v) => { dl.append(el('dt', '', k)); const dd = el('dd'); put(dd, v); dl.append(dd); };
-      row('경험치값', fmt(x.expYield)); row('포획 %', pct(firstThrow(x), 1)); row(`→ 체력 ${pct(C.CATCH_HP_T1, 0)} 이하`, pct(weakThrow(x), 1)); row('→ 그 체력 + 아이템 풀세팅', pct(maxItems(x), 1));
-      row('나오는 곳', x.where.length ? x.where.map((w) => `${w.emoji}${w.name} ${pct(w.chance, 1)}`).join(', ') : '처음에 고를 수 있어요');
-      row('전용기', x.sigs.length ? x.sigs.flatMap((s, i) => [i ? ', ' : '', skillLink(s.n, s.e + s.n)]) : '—');
-      c.append(dl); frag.append(c);
-    });
-    holder.append(frag);
+    if (!rows.length) { holder.append(el('div', 'empty', '조건에 맞는 펫이 없어요 🥲')); return; }
+    if (so.value === 'loc') { // 📍 장소 순: 스타팅 → 탐험 장소 순서대로 묶어서 (한 펫이 여러 장소에 나오면 각 장소에 모두 보여요) → 장소 없는 펫
+      const groups = [['🐣 스타팅 펫', rows.filter((x) => x.starter)], ...D.locations.map((l) => [`${l.emoji} ${l.name}`, rows.filter((x) => x.where.some((w) => w.name === l.name))]), ['❔ 어디서도 안 나와요', rows.filter((x) => !x.starter && !x.where.length)]];
+      groups.forEach(([title, list]) => { if (!list.length) return; list.sort((a, b) => ord(a) - ord(b) || a.catchRate - b.catchRate); holder.append(el('h4', 'gh', `${title} (${list.length})`), grid(list)); });
+    } else { // 💎 희귀도 순: 등급이 높은 펫부터, 같은 등급이면 잡기 어려운 펫부터
+      rows.sort((a, b) => ord(b) - ord(a) || a.catchRate - b.catchRate); holder.append(grid(rows));
+    }
   };
+  so.addEventListener('change', draw);
   q.addEventListener('input', draw); gs.addEventListener('change', draw); draw();
   return p;
 }

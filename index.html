@@ -335,6 +335,9 @@ function panelUpdates() {
       ['', '규칙', [
         '유저(트레이너)·펫 레벨 상한 1000이 기본값으로 실제 적용됐어요 (10/23 패치에서 예고했던 수치예요).',
       ]],
+      ['', '화면', [
+        '[[tab:world|장소·펫]] 탭의 펫 도감 표가 옆으로 길게 늘어나던 문제 수정: 열을 9개 → 7개로 줄이고(포획 % 3칸을 1칸으로 합침), "나오는 곳" · "전용기"처럼 여러 개가 들어가는 칸은 한 줄로 이어 붙이지 않고 줄마다 쌓이게 바꿨어요.',
+      ]],
       ['', '정리', [
         '바로 아래 10/23 패치노트에 스킬 개수가 잘못 적혀 있었어요 (375 → 393개로 표기) — 트릭스터 극장 전용기 9개를 더한 실제 숫자는 375 → 384개예요. 두 군데 모두 고쳤어요.',
       ]],
@@ -588,16 +591,21 @@ function panelWorld() {
     d.append(b); p.append(d);
   });
   p.append(el('h3', '', '🐾 펫 도감'));
+  put(p, el('p', 'fl', `포획 % 칸은 위에서부터 기본(체력 가득) · 체력 ${pct(C.CATCH_HP_T1, 0)} 이하일 때 · 아이템 풀세팅일 때 순서예요 (레벨 차이 없음 · 첫 번째 던지기 기준).`));
   const tools = el('div', 'row'); const q = el('input'); q.type = 'search'; q.placeholder = '펫 이름 · 전용기 이름으로 검색'; const gs = el('select'); const o0 = el('option', '', '모든 등급'); o0.value = ''; gs.append(o0); GRADE_KEYS.forEach((g) => { const o = el('option', '', T.GRADES[g].emoji + ' ' + T.GRADES[g].name); o.value = g; gs.append(o); }); tools.append(q, gs); p.append(tools);
   const cnt = el('p', 'count'); const holder = el('div'); p.append(cnt, holder);
+  // 긴 목록(나오는 곳·전용기 여러 개)은 한 줄로 이어붙이지 않고 줄마다 쌓아요 → 표가 옆으로 안 길어져요
+  const stack = (items) => { const f = document.createDocumentFragment(); items.forEach((it, i) => { if (i) f.append(el('br')); f.append(it); }); return f; };
+  const catchCell = (x) => stack([`기본 ${pct(firstThrow(x), 1)}`, `체력↓ ${pct(weakThrow(x), 1)}`, `풀세팅 ${pct(maxItems(x), 1)}`]);
   const draw = () => {
     const k = q.value.trim().toLowerCase(); holder.replaceChildren();
     const rows = D.pets.filter((x) => (!gs.value || x.grade === gs.value) && (!k || (x.name + ' ' + x.sigs.map((s) => s.n).join(' ')).toLowerCase().includes(k)))
       .sort((a, b) => T.GRADES[a.grade].order - T.GRADES[b.grade].order || a.catchRate - b.catchRate);
     cnt.textContent = rows.length + '마리 표시 중';
-    holder.append(table(['펫', '등급', '체력/공격/방어/속도 (Lv.1)', '경험치값', '포획 %', `→ 체력 ${pct(C.CATCH_HP_T1, 0)} 이하`, '→ 그 체력 + 아이템 풀세팅', '나오는 곳', '전용기'], rows.map((x) => [
-      x.emoji + ' ' + x.name + ' ' + elemIcons(x.id) + (x.starter ? ' (스타팅)' : ''), gradeTag(x.grade), `${x.stats.hp}/${x.stats.atk}/${x.stats.def}/${x.stats.spd}`, fmt(x.expYield), pct(firstThrow(x), 1), pct(weakThrow(x), 1), pct(maxItems(x), 1),
-      x.where.length ? x.where.map((w) => `${w.emoji}${w.name} ${pct(w.chance, 1)}`).join(', ') : '처음에 고를 수 있어요', x.sigs.length ? x.sigs.flatMap((s, i) => [i ? ', ' : '', skillLink(s.n, s.e + s.n)]) : '—'], [3, 4, 5, 6])));
+    holder.append(table(['펫', '등급', '스탯 (Lv.1)', '경험치값', '포획 %', '나오는 곳', '전용기'], rows.map((x) => [
+      x.emoji + ' ' + x.name + ' ' + elemIcons(x.id) + (x.starter ? ' (스타팅)' : ''), gradeTag(x.grade), `${x.stats.hp}/${x.stats.atk}/${x.stats.def}/${x.stats.spd}`, fmt(x.expYield), catchCell(x),
+      x.where.length ? stack(x.where.map((w) => `${w.emoji}${w.name} ${pct(w.chance, 1)}`)) : '처음에 고를 수 있어요',
+      x.sigs.length ? stack(x.sigs.map((s) => skillLink(s.n, s.e + s.n))) : '—'], [3, 4])));
   };
   q.addEventListener('input', draw); gs.addEventListener('change', draw); draw();
   return p;

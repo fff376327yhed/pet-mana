@@ -704,15 +704,6 @@ const firstTurn = (c) => Math.max(1, Math.ceil((c - SC.manaStart) / SC.manaPerTu
 // 서로 이어지는 스킬 (한쪽을 찾으면 짝도 같이 보여줘요)
 const SKILL_PAIRS = [['forbidden_curse', 'curse_grant']];
 const SKILL_BY_ID = Object.fromEntries(D.skills.map((x) => [x.id, x]));
-function withLinked(list) {
-  const out = [], seen = new Set();
-  list.forEach((sk) => {
-    if (seen.has(sk.id)) return;
-    const pr = SKILL_PAIRS.find((x) => x.includes(sk.id));
-    (pr ? pr : [sk.id]).forEach((id) => { if (!seen.has(id) && SKILL_BY_ID[id]) { seen.add(id); out.push(SKILL_BY_ID[id]); } });
-  });
-  return out;
-}
 function skillCard(s) {
   const d = el('div', 'sk'); d.style.setProperty('--tc', TC[s.t]);
   const top = el('div', 'top'); top.append(el('span', 'em', s.e), el('span', 'nm', s.n)); if (s.u) top.append(el('span', 'uq', '독창'));
@@ -741,7 +732,7 @@ function panelSkills() {
   const render = () => {
     let r = D.skills.filter((s) => (stateS.cat === '전체' || (stateS.cat === '독창' ? s.u : (s.k === stateS.cat && !s.u))) && (!stateS.tier || s.t === stateS.tier) && (!stateS.q || (s.n + ' ' + (s.p ?? '') + ' ' + s.x.join(' ') + ' ' + (s.f ?? '')).toLowerCase().includes(stateS.q)));
     const by = { 'mana-asc': (a, b) => a.c - b.c || b.t - a.t || a.n.localeCompare(b.n, 'ko'), 'mana-desc': (a, b) => b.c - a.c || b.t - a.t || a.n.localeCompare(b.n, 'ko'), 'tier-desc': (a, b) => b.t - a.t || a.c - b.c || a.n.localeCompare(b.n, 'ko'), rare: (a, b) => a.r - b.r || b.t - a.t || a.n.localeCompare(b.n, 'ko'), name: (a, b) => a.n.localeCompare(b.n, 'ko') }[stateS.sort];
-    r.sort(by); r = withLinked(r); count.textContent = `${r.length}개 표시 중`; list.replaceChildren();
+    r.sort(by); count.textContent = `${r.length}개 표시 중`; list.replaceChildren();
     if (!r.length) { list.append(el('div', 'empty', '조건에 맞는 스킬이 없어요 🥲')); return; }
     const frag = document.createDocumentFragment(); r.forEach((s) => frag.append(skillCard(s))); list.append(frag);
   };
